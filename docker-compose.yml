@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17.2-alpine
+    container_name: book-catalog-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:bookcatalog}
+      POSTGRES_USER: ${POSTGRES_USER:bookcatalog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:bookcatalog}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookcatalog -d bookcatalog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - book-catalog-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: book-catalog-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: ${DB_HOST:postgres}
+      DB_PORT: ${DB_PORT:5432}
+      DB_NAME: ${DB_NAME:bookcatalog}
+      DB_USERNAME: ${DB_USERNAME:bookcatalog}
+      DB_PASSWORD: ${DB_PASSWORD:bookcatalog}
+    ports:
+      - "8080:8080"
+    networks:
+      - book-catalog-network
+
+volumes:
+  postgres_data:
+
+networks:
+  book-catalog-network:
+    driver: bridge
+

@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: book-catalog
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+
+
+
